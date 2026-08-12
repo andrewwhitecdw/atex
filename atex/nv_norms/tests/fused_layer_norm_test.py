@@ -66,7 +66,8 @@ class NvNormsLayerNormOpTest(test.TestCase):
     validated_axis = sorted(set([i % len(x_shape) for i in axis]))
     weight_shape = [x_shape[i] for i in validated_axis]
 
-    x = tf.random.normal(shape=x_shape, stddev=10.0, dtype=tf.float32)                          
+    x = tf.random.normal(shape=x_shape, stddev=10.0, dtype=data_dtype)
+    self.assertEqual(x.dtype, data_dtype)
     gamma = tf.constant(np.random.normal(size=weight_shape), dtype=tf.float32)
     beta = tf.constant(np.random.normal(size=weight_shape), dtype=tf.float32)
     ref_ln = tf.keras.layers.LayerNormalization(
