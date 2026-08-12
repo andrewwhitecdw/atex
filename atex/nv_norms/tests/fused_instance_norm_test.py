@@ -74,7 +74,8 @@ def get_input_shape(N, C, D, x_rank, axis):
   return x_shape
 
 class NvNormsInstanceNormOpTest(test.TestCase):
-  def _runForward(self, x_shape, axis, data_dtype=tf.float32, epsilon=0.001):
+  def _runForward(self, x_shape, axis, data_dtype=tf.float32, epsilon=0.001,
+                  data_format=None):
     assert axis in (1, -1)
     x = tf.random.normal(shape=x_shape, stddev=10.0, dtype=data_dtype)
     gamma = tf.constant(
@@ -99,14 +100,16 @@ class NvNormsInstanceNormOpTest(test.TestCase):
     # For ops fused_instance_norm_op, fused_instance_norm_grad_op, they take
     # argument data_format in ("NC...", "N...C", "NCHW", "NHWC", "NCDHW", 
     # "NDHWC")
-    op_data_format = "NC..." if axis == 1 else "N...C"
+    op_data_format = data_format if data_format is not None else (
+        "NC..." if axis == 1 else "N...C")
     y, mean, inv_std = fused_instance_norm_op(
         x, gamma, beta, epsilon=epsilon, data_format=op_data_format)
     self.assertAllClose(y, y_ref, atol=0.01)
     self.assertAllClose(mean, mean_ref, atol=0.01)
     self.assertAllClose(inv_std**2, inv_var_ref, atol=0.05)
 
-  def _runBackward(self, x_shape, axis, data_dtype=tf.float32, epsilon=0.001):
+  def _runBackward(self, x_shape, axis, data_dtype=tf.float32, epsilon=0.001,
+                   data_format=None):
     assert axis in (1, -1)
     x_np = np.random.normal(0.0, 10.0, size=x_shape).astype(np.float32)
     dy_np = np.random.normal(size=x_shape).astype(np.float32)
@@ -129,7 +132,8 @@ class NvNormsInstanceNormOpTest(test.TestCase):
     cache["istd"] = inv_std
     cache["mean"] = mean
 
-    grad_op_data_format = "NC..." if axis == 1 else "N...C"
+    grad_op_data_format = data_format if data_format is not None else (
+        "NC..." if axis == 1 else "N...C")
     dx, dgamma, dbeta = fused_instance_norm_grad_op(
         dy, x, gamma, mean, inv_std, data_format=grad_op_data_format)
 
@@ -154,6 +158,20 @@ class NvNormsInstanceNormOpTest(test.TestCase):
         # only test float32 for backward given the baseline is in float32
         self._runBackward(x_shape, axis) 
   
+  @test_util.run_gpu_only
+  def testFusedInstanceNormOpDataFormatAliases(self):
+    N, C = 2, 8
+    with self.cached_session(use_gpu=True):
+      aliases = [
+          ("NCHW", [N, C, 7, 11], 1),
+          ("NHWC", [N, 7, 11, C], -1),
+          ("NCDHW", [N, C, 3, 5, 7], 1),
+          ("NDHWC", [N, 3, 5, 7, C], -1),
+      ]
+      for data_format, x_shape, axis in aliases:
+        self._runForward(x_shape, axis, data_format=data_format)
+        self._runBackward(x_shape, axis, data_format=data_format)
+
   @test_util.run_gpu_only
   def testFusedInstanceNormOpWithNonTypicalInputShapes(self):
     with self.cached_session(use_gpu=True):
