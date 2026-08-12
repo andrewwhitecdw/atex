@@ -33,8 +33,6 @@ def layer_norm_grad_np(x, dy, gamma, cache, axis):
 
   N_axis = (0, )
   D_axis = (1, )
-  N = x.shape[0]
-  D = x.shape[1]
 
   istd = cache["istd"].numpy()
   mean = cache['mean'].numpy()
