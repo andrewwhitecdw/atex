@@ -21,10 +21,10 @@ from atex.nv_norms import fused_instance_norm_op, fused_instance_norm_grad_op
 def instance_norm_grad_np(x, dy, gamma, cache, is_channel_first):
   N_axis = (0, )
   if is_channel_first:
-    D_axis = tuple([i for i in range(2, x.ndim)])
+    D_axis = tuple(range(2, x.ndim))
     C_axis = (1, )
   else:
-    D_axis = tuple([i for i in range(1, x.ndim-1)])
+    D_axis = tuple(range(1, x.ndim-1))
     C_axis = (-1, )
 
   ND_axis = N_axis + D_axis
@@ -89,9 +89,9 @@ class NvNormsInstanceNormOpTest(test.TestCase):
     instanceN_ref.set_weights([gamma, beta])
     y_ref = instanceN_ref(x)
     if axis == 1:
-      reduce_axis = tuple([i for i in range(2, x.ndim)])
+      reduce_axis = tuple(range(2, x.ndim))
     else:
-      reduce_axis = tuple([i for i in range(1, x.ndim-1)])
+      reduce_axis = tuple(range(1, x.ndim-1))
 
     mean_ref, var_ref = tf.cast(tf.nn.moments(x, axes=reduce_axis), tf.float32)
     inv_var_ref = tf.constant(1. / (var_ref + epsilon))
@@ -117,9 +117,9 @@ class NvNormsInstanceNormOpTest(test.TestCase):
     gamma = tf.constant(gamma_np, dtype=tf.float32)
 
     if axis == 1:
-      reduce_axis = tuple([i for i in range(2, x.ndim)])
+      reduce_axis = tuple(range(2, x.ndim))
     else:
-      reduce_axis = tuple([i for i in range(1, x.ndim-1)])
+      reduce_axis = tuple(range(1, x.ndim-1))
 
     mean, var = tf.nn.moments(x, axes=reduce_axis)
     
