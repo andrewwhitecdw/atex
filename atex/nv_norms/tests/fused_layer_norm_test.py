@@ -78,7 +78,7 @@ class NvNormsLayerNormOpTest(test.TestCase):
     inv_var_ref = tf.constant(1. / (var_ref + epsilon),  dtype=tf.float32)
     mean_ref = tf.reshape(mean_ref, shape=-1)
     var_ref = tf.reshape(var_ref, shape=-1)
-    y, mean, inv_std = fused_layer_norm_op(x, gamma, beta, axis=axis)
+    y, mean, inv_std = fused_layer_norm_op(x, gamma, beta, axis=axis, epsilon=epsilon)
     self.assertAllClose(y, y_ref, rtol=0.01, atol=0.01)
     self.assertAllClose(mean, mean_ref, rtol=0.01, atol=0.01)
     self.assertAllClose(inv_std**2, inv_var_ref, rtol=0.01, atol=0.01)
@@ -177,6 +177,46 @@ class NvNormsLayerNormOpTest(test.TestCase):
       self.assertAllEqual(dx.shape, [0, 0])
       self.assertAllEqual(dgamma.shape, [0])
       self.assertAllEqual(dbeta.shape, [0])
+
+  @test_util.run_gpu_only
+  def testFusedLayerNormEmptyInputWithMultiAxis(self):
+    with self.cached_session(use_gpu=True):
+      x = tf.constant([], dtype=tf.float32)
+      x = tf.reshape(x, shape=(0, 0, 0))
+      gamma = tf.constant([], dtype=tf.float32)
+      beta = tf.constant([], dtype=tf.float32)
+      gamma = tf.reshape(gamma, shape=(0, 0))
+      beta = tf.reshape(beta, shape=(0, 0))
+      y, mean, inv_var = fused_layer_norm_op(x, gamma, beta, axis=[1, 2])
+      self.assertAllEqual(y.shape, [0, 0, 0])
+      self.assertAllEqual(mean.shape, [0])
+      self.assertAllEqual(inv_var.shape, [0])
+
+  @test_util.run_gpu_only
+  def testFusedLayerNormGradEmptyInputWithMultiAxis(self):
+    with self.cached_session(use_gpu=True):
+      dy = tf.constant([], dtype=tf.float32)
+      dy = tf.reshape(dy, shape=(0, 0, 0))
+      x = tf.constant([], dtype=tf.float32)
+      x = tf.reshape(x, shape=(0, 0, 0))
+      gamma = tf.constant([], dtype=tf.float32)
+      gamma = tf.reshape(gamma, shape=(0, 0))
+      mean = tf.constant([], dtype=tf.float32)
+      inv_var = tf.constant([], dtype=tf.float32)
+      dx, dgamma, dbeta = fused_layer_norm_grad_op(
+          dy, x, gamma, mean, inv_var, axis=[1, 2])
+      self.assertAllEqual(dx.shape, [0, 0, 0])
+      self.assertAllEqual(dgamma.shape, [0, 0])
+      self.assertAllEqual(dbeta.shape, [0, 0])
+
+  @test_util.run_gpu_only
+  def testFusedLayerNormOpEpsilonValues(self):
+    with self.cached_session(use_gpu=True):
+      for epsilon in [1e-5, 1.0]:
+        self._runForward([4, 16], tf.float32, [-1], epsilon=epsilon)
+        self._runBackward([4, 16], tf.float32, [-1], epsilon=epsilon)
+        self._runForward([2, 4, 8], tf.float32, [1, 2], epsilon=epsilon)
+        self._runBackward([2, 4, 8], tf.float32, [1, 2], epsilon=epsilon)
 
 class NvNormsLayerNormLayerTest(test.TestCase):
   def _runForward(self, x_shape, data_dtype, axis, epsilon=0.001):
