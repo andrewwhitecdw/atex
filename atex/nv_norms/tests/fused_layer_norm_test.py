@@ -248,16 +248,18 @@ class NvNormsLayerNormLayerTest(test.TestCase):
   @test_util.run_gpu_only
   def testFusedLayerNormWithDifferentAxis(self):
     axes = [[1, 2], [-2, -1], [1, -1], [-2, 2], -1]
-    for axis in axes:
-      self._runForward([2, 3, 4], tf.float32, axis)
-      self._runBackward([2, 3, 4], tf.float32, axis)
+    for dtype in [tf.float32, tf.float16]:
+      for axis in axes:
+        self._runForward([2, 3, 4], dtype, axis)
+        self._runBackward([2, 3, 4], dtype, axis)
 
   @test_util.run_gpu_only
   def testLayerWithIntegerAxis(self):
     axes = [-1, 2]
-    for axis in axes:
-      self._runForward([2, 3, 4], tf.float32, axis)
-      self._runBackward([2, 3, 4], tf.float32, axis)
+    for dtype in [tf.float32, tf.float16]:
+      for axis in axes:
+        self._runForward([2, 3, 4], dtype, axis)
+        self._runBackward([2, 3, 4], dtype, axis)
 
 if __name__ == '__main__':
   test.main()
