@@ -117,9 +117,9 @@ class NvNormsInstanceNormOpTest(test.TestCase):
     gamma = tf.constant(gamma_np, dtype=tf.float32)
 
     if axis == 1:
-      reduce_axis = tuple([i for i in range(2, x.ndim)])
+      reduce_axis = tuple(range(2, x.ndim))
     else:
-      reduce_axis = tuple([i for i in range(1, x.ndim-1)])
+      reduce_axis = tuple(range(1, x.ndim-1))
 
     mean, var = tf.nn.moments(x, axes=reduce_axis)
     
