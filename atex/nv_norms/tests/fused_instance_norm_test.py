@@ -273,7 +273,7 @@ class FusedInstanceNormLayerTest(test.TestCase):
   @test_util.run_gpu_only
   def testFusedInstanceNorm(self):
     N, C = 2, 32
-    with self.cached_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True):
       rank, features = 5, 4
       axes = [-1, 1]
       for axis in axes:
