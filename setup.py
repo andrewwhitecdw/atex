@@ -6,6 +6,7 @@ import io
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from distutils.version import LooseVersion
 from setuptools import setup, find_packages, Extension
